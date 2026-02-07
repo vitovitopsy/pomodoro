@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Pomodoro</title>
+    <style>
+        :root {
+            --tomato-red: #e63946;
+            --leaf-green: #2d6a4f;
+            --light-green: #d8f3dc;
+            --cream: #fdfaf6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--light-green);
+            background-image: radial-gradient(var(--leaf-green) 0.5px, transparent 0.5px);
+            background-size: 30px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 15px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        /* Ornamen Kebun */
+        .scary-creature, .tomato-ornament {
+            position: fixed;
+            font-size: 2.5rem;
+            cursor: pointer;
+            z-index: 1;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+        }
+
+        .container {
+            background: var(--cream);
+            padding: 2.5rem 2rem;
+            border-radius: 35px;
+            box-shadow: 0 15px 0px #b7e4c7, 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            border: 4px solid var(--leaf-green);
+        }
+
+        .timer-display {
+            font-size: clamp(4.5rem, 15vw, 6.5rem);
+            font-weight: 900;
+            color: var(--leaf-green);
+            margin: 10px 0;
+            letter-spacing: -2px;
+        }
+
+        .main-btn {
+            background: var(--tomato-red);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #a31621;
+            transition: 0.2s;
+            margin: 5px;
+            text-transform: uppercase;
+        }
+        .main-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a31621; }
+        .btn-pause { background: #f4a261; box-shadow: 0 5px 0 #e76f51; }
+        .btn-reset { background: var(--leaf-green); box-shadow: 0 5px 0 #1b4332; }
+
+        .settings-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 20px;
+            margin: 20px 0;
+            border: 1px dashed var(--leaf-green);
+        }
+
+        .settings-row div { display: flex; flex-direction: column; align-items: center; }
+        .settings-row label { font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; color: var(--leaf-green); }
+        .settings-row input {
+            width: 65px;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .journal-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        @media (max-width: 500px) { .journal-container { grid-template-columns: 1fr; } }
+
+        .journal-box label { font-size: 0.8rem; font-weight: bold; color: var(--leaf-green); display: block; margin-bottom: 5px; }
+        .journal-box input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid var(--light-green);
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        /* Foto Ratio 1:1 */
+        .photo-section { margin-top: 20px; }
+        #photo-input { display: none; }
+        .custom-file-label {
+            background: #fff;
+            color: var(--tomato-red);
+            border: 2px solid var(--tomato-red);
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            transition: 0.3s;
+        }
+        .custom-file-label:hover { background: var(--tomato-red); color: white; }
+
+        .photo-frame {
+            width: 250px;
+            height: 250px;
+            margin: 20px auto;
+            border: 10px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: none;
+        }
+        #preview-img { width: 100%; height: 100%; object-fit: cover; }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(45, 106, 79, 0.98);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="tomato-ornament" style="top:5%; left:5%">🍅</div>
+<div class="tomato-ornament" style="top:5%; right:5%">🍅</div>
+<div class="scary-creature" style="top:15%; left:15%" onmouseover="runAway(this)" onclick="runAway(this)">🐛</div>
+<div class="scary-creature" style="top:15%; right:15%" onmouseover="runAway(this)" onclick="runAway(this)">🐝</div>
+<div class="scary-creature" style="bottom:10%; left:5%" onmouseover="runAway(this)" onclick="runAway(this)">🦋</div>
+<div class="scary-creature" style="bottom:10%; right:5%" onmouseover="runAway(this)" onclick="runAway(this)">🐛</div>
+<div class="tomato-ornament" style="bottom:20%; left:20%">🍅</div>
+<div class="scary-creature" style="top:50%; right:2%" onmouseover="runAway(this)" onclick="runAway(this)">🐝</div>
+
+<div class="container" id="main-box">
+    <h3 id="status-label" style="color: var(--leaf-green); margin: 0; letter-spacing: 1px;">FOKUS YUK! 🍅</h3>
+    <div class="timer-display" id="timer">25:00</div>
+
+    <div style="margin-bottom: 10px;">
+        <button class="main-btn" onclick="playClick(); startTimer()">Mulai</button>
+        <button class="main-btn btn-pause" onclick="playClick(); pauseTimer()">Jeda</button>
+        <button class="main-btn btn-reset" onclick="playClick(); resetTimer()">Reset</button>
+    </div>
+
+    <div class="settings-row">
+        <div><label>FOKUS (M)</label><input type="number" id="focusInput" value="25" step="0.1" onchange="resetTimer()"></div>
+        <div><label>BREAK (M)</label><input type="number" id="breakInput" value="5" step="0.1"></div>
+    </div>
+
+    <div class="journal-container">
+        <div class="journal-box"><label>apa yang mau dikerjakan?</label><input type="text" placeholder="..."></div>
+        <div class="journal-box"><label>apa goals yang akan dicapai?</label><input type="text" placeholder="..."></div>
+    </div>
+
+    <div class="photo-section">
+        <label for="photo-input" class="custom-file-label">📸 Tambah Foto Penyemangat</label>
+        <input type="file" id="photo-input" accept="image/*" onchange="previewImage(event)">
+        <div class="photo-frame" id="frame"><img id="preview-img" src=""></div>
+    </div>
+</div>
+
+<div id="overlay">
+    <h1 id="overlay-text" style="font-size: 2.5rem; margin-bottom: 20px;">Waktunya Istirahat! ☕</h1>
+    <button class="main-btn" onclick="playClick(); stopAlarmAndClose()" style="padding: 20px 40px; font-size: 1.2rem; box-shadow: 0 6px 0 #a31621;">OK!</button>
+</div>
+
+<audio id="alarmAudio" loop src="https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg"></audio>
+<audio id="clickAudio" src="https://cdn.pixabay.com/audio/2022/03/15/audio_783338563c.mp3"></audio>
+
+<script>
+    let timer;
+    let timeLeft;
+    let isRunning = false;
+    let isBreakMode = false;
+
+    const timerDisplay = document.getElementById('timer');
+    const focusInput = document.getElementById('focusInput');
+    const breakInput = document.getElementById('breakInput');
+    const overlay = document.getElementById('overlay');
+    const alarm = document.getElementById('alarmAudio');
+    const clickSound = document.getElementById('clickAudio');
+    const statusLabel = document.getElementById('status-label');
+
+    function playClick() {
+        clickSound.currentTime = 0;
+        clickSound.volume = 0.5;
+        clickSound.play();
+    }
+
+    function updateDisplay(totalSeconds) {
+        const m = Math.floor(totalSeconds / 60);
+        const s = Math.floor(totalSeconds % 60);
+        timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function startTimer() {
+        if (isRunning) return;
+        if (!timeLeft || timeLeft <= 0) {
+            timeLeft = (isBreakMode ? parseFloat(breakInput.value) : parseFloat(focusInput.value)) * 60;
+        }
+        isRunning = true;
+        timer = setInterval(() => {
+            timeLeft--;
+            updateDisplay(timeLeft);
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                isRunning = false;
+                alarm.play();
+                overlay.style.display = 'flex';
+                document.getElementById('overlay-text').innerText = isBreakMode ? "Istirahat Selesai! 💪" : "Istirahat Dulu! ☕";
+            }
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        clearInterval(timer);
+        isRunning = false;
+    }
+
+    function resetTimer() {
+        pauseTimer();
+        isBreakMode = false;
+        statusLabel.innerText = "FOKUS YUK! 🍅";
+        timeLeft = parseFloat(focusInput.value) * 60;
+        updateDisplay(timeLeft);
+    }
+
+    function stopAlarmAndClose() {
+        alarm.pause();
+        alarm.currentTime = 0;
+        overlay.style.display = 'none';
+        isBreakMode = !isBreakMode;
+        statusLabel.innerText = isBreakMode ? "ISTIRAHAT DULU.. ☕" : "FOKUS YUK! 🍅";
+        timeLeft = (isBreakMode ? parseFloat(breakInput.value) : parseFloat(focusInput.value)) * 60;
+        updateDisplay(timeLeft);
+        startTimer(); // Otomatis jalan
+    }
+
+    function runAway(el) {
+        const box = document.getElementById('main-box').getBoundingClientRect();
+        let newX, newY;
+        do {
+            newX = Math.random() * (window.innerWidth - 80);
+            newY = Math.random() * (window.innerHeight - 80);
+        } while (
+            newX > box.left - 80 && newX < box.right + 80 &&
+            newY > box.top - 80 && newY < box.bottom + 80
+        );
+        el.style.left = newX + 'px';
+        el.style.top = newY + 'px';
+    }
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        const frame = document.getElementById('frame');
+        const output = document.getElementById('preview-img');
+        reader.onload = function(){
+            output.src = reader.result;
+            frame.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Awal
+    timeLeft = parseFloat(focusInput.value) * 60;
+    updateDisplay(timeLeft);
+</script>
+
+</body>
+</html>
