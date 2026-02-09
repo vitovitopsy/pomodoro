@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tomato Pomodoro</title>
+    <title>Tomato Garden Focus 🍅</title>
     <style>
         :root {
             --tomato-red: #e63946;
@@ -117,13 +117,11 @@
             outline: none;
         }
 
-        /* Foto Ratio 1:1 */
-        .photo-section { margin-top: 20px; }
         #photo-input { display: none; }
         .custom-file-label {
             background: #fff;
-            color: var(--tomato-red);
-            border: 2px solid var(--tomato-red);
+            color: var(--leaf-green);
+            border: 2px solid var(--leaf-green);
             padding: 10px 20px;
             border-radius: 15px;
             cursor: pointer;
@@ -131,8 +129,6 @@
             display: inline-block;
             transition: 0.3s;
         }
-        .custom-file-label:hover { background: var(--tomato-red); color: white; }
-
         .photo-frame {
             width: 250px;
             height: 250px;
@@ -186,8 +182,8 @@
     </div>
 
     <div class="journal-container">
-        <div class="journal-box"><label>apa yang mau dikerjakan?</label><input type="text" placeholder="..."></div>
-        <div class="journal-box"><label>apa goals yang akan dicapai?</label><input type="text" placeholder="..."></div>
+        <div class="journal-box"><label>Sedang apa?</label><input type="text" placeholder="..."></div>
+        <div class="journal-box"><label>Dapat apa?</label><input type="text" placeholder="..."></div>
     </div>
 
     <div class="photo-section">
@@ -199,7 +195,7 @@
 
 <div id="overlay">
     <h1 id="overlay-text" style="font-size: 2.5rem; margin-bottom: 20px;">Waktunya Istirahat! ☕</h1>
-    <button class="main-btn" onclick="playClick(); stopAlarmAndClose()" style="padding: 20px 40px; font-size: 1.2rem; box-shadow: 0 6px 0 #a31621;">OK!</button>
+    <button class="main-btn" onclick="playClick(); stopAlarmAndClose()" style="padding: 20px 40px; font-size: 1.2rem; box-shadow: 0 6px 0 #a31621;">OK, LANJUT!</button>
 </div>
 
 <audio id="alarmAudio" loop src="https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg"></audio>
@@ -208,6 +204,7 @@
 <script>
     let timer;
     let timeLeft;
+    let endTime; // Variabel krusial untuk menyimpan waktu target
     let isRunning = false;
     let isBreakMode = false;
 
@@ -226,6 +223,7 @@
     }
 
     function updateDisplay(totalSeconds) {
+        if (totalSeconds < 0) totalSeconds = 0;
         const m = Math.floor(totalSeconds / 60);
         const s = Math.floor(totalSeconds % 60);
         timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
@@ -233,26 +231,40 @@
 
     function startTimer() {
         if (isRunning) return;
+        
+        // Tentukan durasi
         if (!timeLeft || timeLeft <= 0) {
             timeLeft = (isBreakMode ? parseFloat(breakInput.value) : parseFloat(focusInput.value)) * 60;
         }
+
+        // Hitung kapan waktu harus berakhir berdasarkan JAM SISTEM saat ini
+        endTime = Date.now() + (timeLeft * 1000);
+        
         isRunning = true;
+        
         timer = setInterval(() => {
-            timeLeft--;
-            updateDisplay(timeLeft);
+            // Bandingkan JAM SISTEM saat ini dengan waktu target
+            const now = Date.now();
+            timeLeft = Math.round((endTime - now) / 1000);
+
             if (timeLeft <= 0) {
                 clearInterval(timer);
+                timeLeft = 0;
+                updateDisplay(0);
                 isRunning = false;
                 alarm.play();
                 overlay.style.display = 'flex';
-                document.getElementById('overlay-text').innerText = isBreakMode ? "Istirahat Selesai! 💪" : "Istirahat Dulu! ☕";
+                document.getElementById('overlay-text').innerText = isBreakMode ? "Istirahat Selesai! 💪" : "Waktunya Istirahat! ☕";
+            } else {
+                updateDisplay(timeLeft);
             }
-        }, 1000);
+        }, 200); // Cek setiap 200ms agar tetap mulus
     }
 
     function pauseTimer() {
         clearInterval(timer);
         isRunning = false;
+        // Waktu tersisa disimpan secara manual saat jeda
     }
 
     function resetTimer() {
@@ -268,12 +280,13 @@
         alarm.currentTime = 0;
         overlay.style.display = 'none';
         isBreakMode = !isBreakMode;
-        statusLabel.innerText = isBreakMode ? "ISTIRAHAT DULU.. ☕" : "FOKUS YUK! 🍅";
+        statusLabel.innerText = isBreakMode ? "ISTIRAHAT SEJENAK.. ☕" : "FOKUS YUK! 🍅";
         timeLeft = (isBreakMode ? parseFloat(breakInput.value) : parseFloat(focusInput.value)) * 60;
         updateDisplay(timeLeft);
         startTimer(); // Otomatis jalan
     }
 
+    // Fungsi ornamen tetap sama
     function runAway(el) {
         const box = document.getElementById('main-box').getBoundingClientRect();
         let newX, newY;
@@ -299,7 +312,7 @@
         reader.readAsDataURL(event.target.files[0]);
     }
 
-    // Awal
+    // Inisialisasi
     timeLeft = parseFloat(focusInput.value) * 60;
     updateDisplay(timeLeft);
 </script>
